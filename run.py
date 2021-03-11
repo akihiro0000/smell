@@ -1,8 +1,13 @@
 import spidev
 import RPi.GPIO as GPIO
 import time
+import paho.mqtt.client as mqtt
+from datetime import datetime
 
 threshold = 500
+
+mqtt_client = mqtt.Client()
+mqtt_client.connect("fluent-bit",1883, 60)
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(17,GPIO.OUT)
@@ -45,10 +50,16 @@ try:
         time.sleep(0.008)
         GPIO.output(17,False)
 
-        print(Val)
+        tim = '"timestamp":"'+datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')+'"'
+        Val = '"' + "value" + '"' + ":" + '"' + str(Val) + '"'
+        mylist = [tim,Val]
+        mystr = '{' + ','.join(map(str,mylist))+'}'
+        print(mystr)
+        mqtt_client.publish("{}/{}".format("/demo",'car_count'), mystr)
 
 
 except KeyboardInterrupt:
     pass
 
 spi.close()
+mqtt_client.disconnect()
